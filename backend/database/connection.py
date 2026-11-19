@@ -1,24 +1,65 @@
 
-from sqlalchemy import create_engine, text
+from pathlib import Path
+
+from sqlalchemy import create_engine, event
 from sqlalchemy.orm import DeclarativeBase, sessionmaker
 
 from backend.config import settings
 
 
-# Base class cho toàn bộ ORM models
+# =========================================================
+# DATABASE DIRECTORY
+# =========================================================
+
+DATABASE_PATH = Path(settings.DATABASE_PATH)
+
+DATABASE_PATH.parent.mkdir(
+    parents=True,
+    exist_ok=True
+)
+
+
+# =========================================================
+# SQLALCHEMY BASE
+# =========================================================
+
 class Base(DeclarativeBase):
     pass
 
 
-# Kết nối PostgreSQL
+# =========================================================
+# SQLITE ENGINE
+# =========================================================
+
+DATABASE_URL = f"sqlite:///{DATABASE_PATH.as_posix()}"
+
 engine = create_engine(
-    settings.DATABASE_URL,
-    pool_pre_ping=True,
+    DATABASE_URL,
+    connect_args={
+        "check_same_thread": False
+    },
     echo=settings.DEBUG
 )
 
 
-# Session dùng để thực hiện các truy vấn database
+# =========================================================
+# ENABLE FOREIGN KEY CONSTRAINTS
+# =========================================================
+
+@event.listens_for(engine, "connect")
+def enable_foreign_keys(dbapi_connection, connection_record):
+
+    cursor = dbapi_connection.cursor()
+
+    cursor.execute("PRAGMA foreign_keys=ON")
+
+    cursor.close()
+
+
+# =========================================================
+# SESSION
+# =========================================================
+
 SessionLocal = sessionmaker(
     bind=engine,
     autoflush=False,
@@ -27,31 +68,54 @@ SessionLocal = sessionmaker(
 )
 
 
-# Dependency cung cấp database session
+# =========================================================
+# DATABASE DEPENDENCY
+# =========================================================
+
 def get_db():
+
     db = SessionLocal()
 
     try:
         yield db
+
     finally:
         db.close()
 
 
-# Kích hoạt extension pgvector
-def enable_pgvector():
-    with engine.begin() as connection:
-        connection.execute(
-            text("CREATE EXTENSION IF NOT EXISTS vector")
-        )
+# =========================================================
+# CREATE TABLES
+# =========================================================
 
-
-# Tạo toàn bộ bảng
 def create_tables():
-    # Import models để SQLAlchemy nhận diện các bảng
-    from backend.database import models
 
-    enable_pgvector()
+    # Import models để SQLAlchemy nhận diện toàn bộ bảng
+    from backend.database import models
 
     Base.metadata.create_all(bind=engine)
 
-    print("Database tables created successfully.")
+    print("SQLite database initialized successfully.")
+    print(f"Database location: {DATABASE_PATH}")
+
+
+# =========================================================
+# CHECK DATABASE CONNECTION
+# =========================================================
+
+def check_database_connection():
+
+    from sqlalchemy import text
+
+    try:
+
+        with engine.connect() as connection:
+
+            connection.execute(text("SELECT 1"))
+
+        return True
+
+    except Exception as error:
+
+        print(f"Database connection error: {error}")
+
+        return False

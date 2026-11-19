@@ -1,24 +1,34 @@
 
 from datetime import datetime
 from decimal import Decimal
-from uuid import UUID
 
-from pydantic import BaseModel, ConfigDict, EmailStr, Field
+from pydantic import (
+    BaseModel,
+    ConfigDict,
+    EmailStr,
+    Field
+)
 
 
-# -------------------------
-# Customer
-# -------------------------
+# =========================================================
+# CUSTOMER
+# =========================================================
 
 class CustomerCreate(BaseModel):
-    full_name: str = Field(min_length=1, max_length=150)
+
+    full_name: str = Field(
+        min_length=1,
+        max_length=150
+    )
+
     email: EmailStr
     phone: str | None = None
     address: str | None = None
 
 
 class CustomerRead(BaseModel):
-    id: UUID
+
+    id: str
     full_name: str
     email: EmailStr
     phone: str | None
@@ -29,30 +39,44 @@ class CustomerRead(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 
 
-# -------------------------
-# Category
-# -------------------------
+# =========================================================
+# CATEGORY
+# =========================================================
 
 class CategoryCreate(BaseModel):
-    name: str = Field(min_length=1, max_length=120)
+
+    name: str = Field(
+        min_length=1,
+        max_length=120
+    )
+
     description: str | None = None
 
 
-# -------------------------
-# Product
-# -------------------------
+# =========================================================
+# PRODUCT
+# =========================================================
 
 class ProductCreate(BaseModel):
-    category_id: UUID | None = None
-    name: str = Field(min_length=1, max_length=200)
+
+    category_id: str | None = None
+
+    name: str = Field(
+        min_length=1,
+        max_length=200
+    )
+
     description: str | None = None
+
     price: Decimal = Field(ge=0)
+
     stock_quantity: int = Field(ge=0)
 
 
 class ProductRead(BaseModel):
-    id: UUID
-    category_id: UUID | None
+
+    id: str
+    category_id: str | None
     name: str
     description: str | None
     price: Decimal
@@ -62,13 +86,14 @@ class ProductRead(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 
 
-# -------------------------
-# Order
-# -------------------------
+# =========================================================
+# ORDER
+# =========================================================
 
 class OrderRead(BaseModel):
-    id: UUID
-    customer_id: UUID
+
+    id: str
+    customer_id: str
     order_code: str
     total_amount: Decimal
     order_status: str
@@ -78,17 +103,19 @@ class OrderRead(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 
 
-# -------------------------
-# Chat
-# -------------------------
+# =========================================================
+# CHAT
+# =========================================================
 
 class ChatMessageCreate(BaseModel):
+
     content: str = Field(min_length=1)
 
 
 class ChatMessageRead(BaseModel):
-    id: UUID
-    session_id: UUID
+
+    id: str
+    session_id: str
     sender: str
     content: str
     created_at: datetime
@@ -96,20 +123,29 @@ class ChatMessageRead(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 
 
-# -------------------------
-# Knowledge Document
-# -------------------------
+# =========================================================
+# KNOWLEDGE DOCUMENT
+# =========================================================
 
 class KnowledgeDocumentCreate(BaseModel):
-    title: str = Field(min_length=1, max_length=255)
+
+    title: str = Field(
+        min_length=1,
+        max_length=255
+    )
+
     source: str | None = None
+
     visibility: str = "PUBLIC"
+
     document_type: str | None = None
-    owner_customer_id: UUID | None = None
+
+    owner_customer_id: str | None = None
 
 
 class KnowledgeDocumentRead(BaseModel):
-    id: UUID
+
+    id: str
     title: str
     source: str | None
     visibility: str

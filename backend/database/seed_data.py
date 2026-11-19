@@ -3,7 +3,11 @@ from decimal import Decimal
 
 from sqlalchemy import select
 
-from backend.database.connection import SessionLocal, create_tables
+from backend.database.connection import (
+    SessionLocal,
+    create_tables
+)
+
 from backend.database.models import (
     Customer,
     Category,
@@ -15,12 +19,19 @@ from backend.database.models import (
 )
 
 
+# =========================================================
+# SEED DATABASE
+# =========================================================
+
 def seed_database():
+
+    # Tạo database và 11 bảng nếu chưa tồn tại
     create_tables()
 
     db = SessionLocal()
 
     try:
+
         # -------------------------------------
         # 1. CUSTOMER
         # -------------------------------------
@@ -32,12 +43,14 @@ def seed_database():
         )
 
         if customer is None:
+
             customer = Customer(
                 full_name="Nguyen Van A",
                 email="customer.a@example.com",
                 phone="0900000001",
                 address="Ho Chi Minh City"
             )
+
             db.add(customer)
             db.flush()
 
@@ -54,15 +67,20 @@ def seed_database():
         categories = {}
 
         for name, description in category_data:
+
             category = db.scalar(
-                select(Category).where(Category.name == name)
+                select(Category).where(
+                    Category.name == name
+                )
             )
 
             if category is None:
+
                 category = Category(
                     name=name,
                     description=description
                 )
+
                 db.add(category)
                 db.flush()
 
@@ -99,6 +117,7 @@ def seed_database():
         products = {}
 
         for item in product_data:
+
             product = db.scalar(
                 select(Product).where(
                     Product.name == item["name"]
@@ -106,13 +125,17 @@ def seed_database():
             )
 
             if product is None:
+
                 product = Product(
                     name=item["name"],
                     description=item["description"],
                     price=item["price"],
                     stock_quantity=item["stock_quantity"],
-                    category_id=categories[item["category"]].id,
+                    category_id=categories[
+                        item["category"]
+                    ].id
                 )
+
                 db.add(product)
                 db.flush()
 
@@ -129,10 +152,11 @@ def seed_database():
         )
 
         if order is None:
+
             order = Order(
                 customer_id=customer.id,
                 order_code="DH0001",
-                total_amount=Decimal("42000"),
+                total_amount=Decimal("32000"),
                 order_status="SHIPPING",
                 shipping_address="Ho Chi Minh City"
             )
@@ -170,9 +194,13 @@ def seed_database():
         )
 
         if policy is None:
+
             policy = KnowledgeDocument(
                 title="Return Policy",
-                source="data/documents/policies/return_policy.txt",
+                source=(
+                    "data/documents/policies/"
+                    "return_policy.txt"
+                ),
                 visibility="PUBLIC",
                 document_type="POLICY",
                 owner_customer_id=None
@@ -180,17 +208,31 @@ def seed_database():
 
             db.add(policy)
 
+        # -------------------------------------
+        # COMMIT
+        # -------------------------------------
+
         db.commit()
 
         print("Sample data inserted successfully.")
 
-    except Exception:
+    except Exception as error:
+
         db.rollback()
+
+        print(f"Seed error: {error}")
+
         raise
 
     finally:
+
         db.close()
 
 
+# =========================================================
+# ENTRY POINT
+# =========================================================
+
 if __name__ == "__main__":
+
     seed_database()

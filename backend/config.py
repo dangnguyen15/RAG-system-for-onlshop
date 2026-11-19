@@ -1,17 +1,28 @@
 
+from pathlib import Path
+
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
+# Project root
+BASE_DIR = Path(__file__).resolve().parent.parent
+
+# Database directory
+DATABASE_DIR = BASE_DIR / "database"
+
+# SQLite database file
+DATABASE_PATH = DATABASE_DIR / "onlshop.db"
+
+
 class Settings(BaseSettings):
+
     # Application
     APP_NAME: str = "RAG System for Online Shop"
     APP_ENV: str = "development"
     DEBUG: bool = True
 
-    # PostgreSQL
-    DATABASE_URL: str = (
-        "postgresql+psycopg://postgres:password@localhost:5432/onlshop_db"
-    )
+    # SQLite
+    DATABASE_PATH: str = str(DATABASE_PATH)
 
     # Qwen LLM
     QWEN_API_KEY: str = ""
@@ -21,7 +32,7 @@ class Settings(BaseSettings):
     # Embedding
     EMBEDDING_MODEL_NAME: str = "Vietnamese_Embedding_v2"
 
-    # Placeholder: cần xác minh dimension thực tế của model
+    # Dimension phải được xác minh từ model thực tế
     EMBEDDING_DIMENSION: int = 768
 
     model_config = SettingsConfigDict(
@@ -33,3 +44,4 @@ class Settings(BaseSettings):
 
 
 settings = Settings()
+

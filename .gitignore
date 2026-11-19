@@ -1,13 +1,22 @@
-.venv/
+
+# Python
 __pycache__/
 *.py[cod]
+.venv/
 
+# Environment
 .env
 
-.pytest_cache/
-.mypy_cache/
+# SQLite
+database/*.db
+database/*.db-shm
+database/*.db-wal
 
+# IDE
 .vscode/
 .idea/
 
+# Cache and logs
+.pytest_cache/
+.mypy_cache/
 *.log

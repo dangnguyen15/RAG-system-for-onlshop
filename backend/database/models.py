@@ -1,25 +1,37 @@
 
 import uuid
 
+from typing import Optional, List
+
 from sqlalchemy import (
     Boolean,
     CheckConstraint,
     DateTime,
     ForeignKey,
-    Index,
     Integer,
     Numeric,
     String,
     Text,
     UniqueConstraint,
+    JSON,
     func,
 )
-from sqlalchemy.dialects.postgresql import UUID, JSONB
-from sqlalchemy.orm import Mapped, mapped_column, relationship
-from pgvector.sqlalchemy import Vector
 
-from backend.config import settings
+from sqlalchemy.orm import (
+    Mapped,
+    mapped_column,
+    relationship,
+)
+
 from backend.database.connection import Base
+
+
+# =========================================================
+# UUID HELPER
+# =========================================================
+
+def generate_uuid():
+    return str(uuid.uuid4())
 
 
 # =========================================================
@@ -27,28 +39,49 @@ from backend.database.connection import Base
 # =========================================================
 
 class Customer(Base):
+
     __tablename__ = "customers"
 
-    id: Mapped[uuid.UUID] = mapped_column(
-        UUID(as_uuid=True),
+    id: Mapped[str] = mapped_column(
+        String(36),
         primary_key=True,
-        default=uuid.uuid4
+        default=generate_uuid
     )
 
-    full_name: Mapped[str] = mapped_column(String(150), nullable=False)
-    email: Mapped[str] = mapped_column(
-        String(255), unique=True, nullable=False, index=True
+    full_name: Mapped[str] = mapped_column(
+        String(150),
+        nullable=False
     )
-    phone: Mapped[str | None] = mapped_column(String(20))
-    address: Mapped[str | None] = mapped_column(Text)
+
+    email: Mapped[str] = mapped_column(
+        String(255),
+        unique=True,
+        nullable=False,
+        index=True
+    )
+
+    phone: Mapped[Optional[str]] = mapped_column(
+        String(20),
+        nullable=True
+    )
+
+    address: Mapped[Optional[str]] = mapped_column(
+        Text,
+        nullable=True
+    )
 
     is_active: Mapped[bool] = mapped_column(
-        Boolean, default=True, nullable=False
+        Boolean,
+        default=True,
+        nullable=False
     )
 
     created_at: Mapped[DateTime] = mapped_column(
-        DateTime(timezone=True), server_default=func.now()
+        DateTime,
+        server_default=func.now()
     )
+
+    # Relationships
 
     credentials = relationship(
         "UserCredential",
@@ -56,13 +89,19 @@ class Customer(Base):
         uselist=False
     )
 
-    orders = relationship("Order", back_populates="customer")
+    orders = relationship(
+        "Order",
+        back_populates="customer"
+    )
+
     chat_sessions = relationship(
-        "ChatSession", back_populates="customer"
+        "ChatSession",
+        back_populates="customer"
     )
 
     knowledge_documents = relationship(
-        "KnowledgeDocument", back_populates="owner"
+        "KnowledgeDocument",
+        back_populates="owner"
     )
 
 
@@ -71,31 +110,38 @@ class Customer(Base):
 # =========================================================
 
 class UserCredential(Base):
+
     __tablename__ = "user_credentials"
 
-    id: Mapped[uuid.UUID] = mapped_column(
-        UUID(as_uuid=True),
+    id: Mapped[str] = mapped_column(
+        String(36),
         primary_key=True,
-        default=uuid.uuid4
+        default=generate_uuid
     )
 
-    customer_id: Mapped[uuid.UUID] = mapped_column(
-        UUID(as_uuid=True),
-        ForeignKey("customers.id", ondelete="CASCADE"),
+    customer_id: Mapped[str] = mapped_column(
+        String(36),
+        ForeignKey(
+            "customers.id",
+            ondelete="CASCADE"
+        ),
         unique=True,
         nullable=False
     )
 
     password_hash: Mapped[str] = mapped_column(
-        String(255), nullable=False
+        String(255),
+        nullable=False
     )
 
     created_at: Mapped[DateTime] = mapped_column(
-        DateTime(timezone=True), server_default=func.now()
+        DateTime,
+        server_default=func.now()
     )
 
     customer = relationship(
-        "Customer", back_populates="credentials"
+        "Customer",
+        back_populates="credentials"
     )
 
 
@@ -104,21 +150,30 @@ class UserCredential(Base):
 # =========================================================
 
 class Category(Base):
+
     __tablename__ = "categories"
 
-    id: Mapped[uuid.UUID] = mapped_column(
-        UUID(as_uuid=True),
+    id: Mapped[str] = mapped_column(
+        String(36),
         primary_key=True,
-        default=uuid.uuid4
+        default=generate_uuid
     )
 
     name: Mapped[str] = mapped_column(
-        String(120), unique=True, nullable=False
+        String(120),
+        unique=True,
+        nullable=False
     )
 
-    description: Mapped[str | None] = mapped_column(Text)
+    description: Mapped[Optional[str]] = mapped_column(
+        Text,
+        nullable=True
+    )
 
-    products = relationship("Product", back_populates="category")
+    products = relationship(
+        "Product",
+        back_populates="category"
+    )
 
 
 # =========================================================
@@ -126,48 +181,76 @@ class Category(Base):
 # =========================================================
 
 class Product(Base):
+
     __tablename__ = "products"
 
-    id: Mapped[uuid.UUID] = mapped_column(
-        UUID(as_uuid=True),
+    id: Mapped[str] = mapped_column(
+        String(36),
         primary_key=True,
-        default=uuid.uuid4
+        default=generate_uuid
     )
 
-    category_id: Mapped[uuid.UUID | None] = mapped_column(
-        UUID(as_uuid=True),
-        ForeignKey("categories.id", ondelete="SET NULL")
+    category_id: Mapped[Optional[str]] = mapped_column(
+        String(36),
+        ForeignKey(
+            "categories.id",
+            ondelete="SET NULL"
+        ),
+        nullable=True
     )
 
-    name: Mapped[str] = mapped_column(String(200), nullable=False)
-    description: Mapped[str | None] = mapped_column(Text)
+    name: Mapped[str] = mapped_column(
+        String(200),
+        nullable=False
+    )
+
+    description: Mapped[Optional[str]] = mapped_column(
+        Text,
+        nullable=True
+    )
 
     price: Mapped[float] = mapped_column(
-        Numeric(12, 2), nullable=False
+        Numeric(12, 2),
+        nullable=False
     )
 
     stock_quantity: Mapped[int] = mapped_column(
-        Integer, default=0, nullable=False
+        Integer,
+        default=0,
+        nullable=False
     )
 
     is_active: Mapped[bool] = mapped_column(
-        Boolean, default=True, nullable=False
+        Boolean,
+        default=True,
+        nullable=False
     )
 
     created_at: Mapped[DateTime] = mapped_column(
-        DateTime(timezone=True), server_default=func.now()
+        DateTime,
+        server_default=func.now()
     )
 
     __table_args__ = (
-        CheckConstraint("price >= 0", name="ck_products_price"),
+        CheckConstraint(
+            "price >= 0",
+            name="ck_products_price"
+        ),
         CheckConstraint(
             "stock_quantity >= 0",
             name="ck_products_stock"
         ),
     )
 
-    category = relationship("Category", back_populates="products")
-    order_items = relationship("OrderItem", back_populates="product")
+    category = relationship(
+        "Category",
+        back_populates="products"
+    )
+
+    order_items = relationship(
+        "OrderItem",
+        back_populates="product"
+    )
 
 
 # =========================================================
@@ -175,43 +258,54 @@ class Product(Base):
 # =========================================================
 
 class Order(Base):
+
     __tablename__ = "orders"
 
-    id: Mapped[uuid.UUID] = mapped_column(
-        UUID(as_uuid=True),
+    id: Mapped[str] = mapped_column(
+        String(36),
         primary_key=True,
-        default=uuid.uuid4
+        default=generate_uuid
     )
 
-    customer_id: Mapped[uuid.UUID] = mapped_column(
-        UUID(as_uuid=True),
-        ForeignKey("customers.id", ondelete="RESTRICT"),
+    customer_id: Mapped[str] = mapped_column(
+        String(36),
+        ForeignKey(
+            "customers.id",
+            ondelete="RESTRICT"
+        ),
         nullable=False,
         index=True
     )
 
     order_code: Mapped[str] = mapped_column(
-        String(50), unique=True, nullable=False
+        String(50),
+        unique=True,
+        nullable=False
     )
 
     total_amount: Mapped[float] = mapped_column(
-        Numeric(12, 2), nullable=False
+        Numeric(12, 2),
+        nullable=False
     )
 
     order_status: Mapped[str] = mapped_column(
-        String(30), default="PENDING", nullable=False
+        String(30),
+        default="PENDING",
+        nullable=False
     )
 
     shipping_address: Mapped[str] = mapped_column(
-        Text, nullable=False
+        Text,
+        nullable=False
     )
 
     created_at: Mapped[DateTime] = mapped_column(
-        DateTime(timezone=True), server_default=func.now()
+        DateTime,
+        server_default=func.now()
     )
 
     updated_at: Mapped[DateTime] = mapped_column(
-        DateTime(timezone=True),
+        DateTime,
         server_default=func.now(),
         onupdate=func.now()
     )
@@ -229,7 +323,10 @@ class Order(Base):
         ),
     )
 
-    customer = relationship("Customer", back_populates="orders")
+    customer = relationship(
+        "Customer",
+        back_populates="orders"
+    )
 
     items = relationship(
         "OrderItem",
@@ -249,45 +346,68 @@ class Order(Base):
 # =========================================================
 
 class OrderItem(Base):
+
     __tablename__ = "order_items"
 
-    id: Mapped[uuid.UUID] = mapped_column(
-        UUID(as_uuid=True),
+    id: Mapped[str] = mapped_column(
+        String(36),
         primary_key=True,
-        default=uuid.uuid4
+        default=generate_uuid
     )
 
-    order_id: Mapped[uuid.UUID] = mapped_column(
-        UUID(as_uuid=True),
-        ForeignKey("orders.id", ondelete="CASCADE"),
+    order_id: Mapped[str] = mapped_column(
+        String(36),
+        ForeignKey(
+            "orders.id",
+            ondelete="CASCADE"
+        ),
         nullable=False
     )
 
-    product_id: Mapped[uuid.UUID | None] = mapped_column(
-        UUID(as_uuid=True),
-        ForeignKey("products.id", ondelete="SET NULL")
+    product_id: Mapped[Optional[str]] = mapped_column(
+        String(36),
+        ForeignKey(
+            "products.id",
+            ondelete="SET NULL"
+        ),
+        nullable=True
     )
 
-    # Snapshot để giữ tên và giá tại thời điểm mua
     product_name_snapshot: Mapped[str] = mapped_column(
-        String(200), nullable=False
+        String(200),
+        nullable=False
     )
 
     unit_price: Mapped[float] = mapped_column(
-        Numeric(12, 2), nullable=False
+        Numeric(12, 2),
+        nullable=False
     )
 
     quantity: Mapped[int] = mapped_column(
-        Integer, nullable=False
+        Integer,
+        nullable=False
     )
 
     __table_args__ = (
-        CheckConstraint("unit_price >= 0", name="ck_item_price"),
-        CheckConstraint("quantity > 0", name="ck_item_quantity"),
+        CheckConstraint(
+            "unit_price >= 0",
+            name="ck_item_price"
+        ),
+        CheckConstraint(
+            "quantity > 0",
+            name="ck_item_quantity"
+        ),
     )
 
-    order = relationship("Order", back_populates="items")
-    product = relationship("Product", back_populates="order_items")
+    order = relationship(
+        "Order",
+        back_populates="items"
+    )
+
+    product = relationship(
+        "Product",
+        back_populates="order_items"
+    )
 
 
 # =========================================================
@@ -295,44 +415,61 @@ class OrderItem(Base):
 # =========================================================
 
 class Shipment(Base):
+
     __tablename__ = "shipments"
 
-    id: Mapped[uuid.UUID] = mapped_column(
-        UUID(as_uuid=True),
+    id: Mapped[str] = mapped_column(
+        String(36),
         primary_key=True,
-        default=uuid.uuid4
+        default=generate_uuid
     )
 
-    order_id: Mapped[uuid.UUID] = mapped_column(
-        UUID(as_uuid=True),
-        ForeignKey("orders.id", ondelete="CASCADE"),
+    order_id: Mapped[str] = mapped_column(
+        String(36),
+        ForeignKey(
+            "orders.id",
+            ondelete="CASCADE"
+        ),
         nullable=False,
         index=True
     )
 
-    tracking_code: Mapped[str | None] = mapped_column(
-        String(100), unique=True
+    tracking_code: Mapped[Optional[str]] = mapped_column(
+        String(100),
+        unique=True,
+        nullable=True
     )
 
-    carrier: Mapped[str | None] = mapped_column(String(100))
+    carrier: Mapped[Optional[str]] = mapped_column(
+        String(100),
+        nullable=True
+    )
 
     shipment_status: Mapped[str] = mapped_column(
-        String(30), default="PENDING", nullable=False
+        String(30),
+        default="PENDING",
+        nullable=False
     )
 
-    shipped_at: Mapped[DateTime | None] = mapped_column(
-        DateTime(timezone=True)
+    shipped_at: Mapped[Optional[DateTime]] = mapped_column(
+        DateTime,
+        nullable=True
     )
 
-    estimated_delivery: Mapped[DateTime | None] = mapped_column(
-        DateTime(timezone=True)
+    estimated_delivery: Mapped[Optional[DateTime]] = mapped_column(
+        DateTime,
+        nullable=True
     )
 
-    delivered_at: Mapped[DateTime | None] = mapped_column(
-        DateTime(timezone=True)
+    delivered_at: Mapped[Optional[DateTime]] = mapped_column(
+        DateTime,
+        nullable=True
     )
 
-    order = relationship("Order", back_populates="shipments")
+    order = relationship(
+        "Order",
+        back_populates="shipments"
+    )
 
 
 # =========================================================
@@ -340,33 +477,44 @@ class Shipment(Base):
 # =========================================================
 
 class ChatSession(Base):
+
     __tablename__ = "chat_sessions"
 
-    id: Mapped[uuid.UUID] = mapped_column(
-        UUID(as_uuid=True),
+    id: Mapped[str] = mapped_column(
+        String(36),
         primary_key=True,
-        default=uuid.uuid4
+        default=generate_uuid
     )
 
-    customer_id: Mapped[uuid.UUID] = mapped_column(
-        UUID(as_uuid=True),
-        ForeignKey("customers.id", ondelete="CASCADE"),
+    customer_id: Mapped[str] = mapped_column(
+        String(36),
+        ForeignKey(
+            "customers.id",
+            ondelete="CASCADE"
+        ),
         nullable=False,
         index=True
     )
 
-    session_title: Mapped[str | None] = mapped_column(String(200))
+    session_title: Mapped[Optional[str]] = mapped_column(
+        String(200),
+        nullable=True
+    )
 
     is_active: Mapped[bool] = mapped_column(
-        Boolean, default=True, nullable=False
+        Boolean,
+        default=True,
+        nullable=False
     )
 
     created_at: Mapped[DateTime] = mapped_column(
-        DateTime(timezone=True), server_default=func.now()
+        DateTime,
+        server_default=func.now()
     )
 
     customer = relationship(
-        "Customer", back_populates="chat_sessions"
+        "Customer",
+        back_populates="chat_sessions"
     )
 
     messages = relationship(
@@ -381,34 +529,44 @@ class ChatSession(Base):
 # =========================================================
 
 class ChatMessage(Base):
+
     __tablename__ = "chat_messages"
 
-    id: Mapped[uuid.UUID] = mapped_column(
-        UUID(as_uuid=True),
+    id: Mapped[str] = mapped_column(
+        String(36),
         primary_key=True,
-        default=uuid.uuid4
+        default=generate_uuid
     )
 
-    session_id: Mapped[uuid.UUID] = mapped_column(
-        UUID(as_uuid=True),
-        ForeignKey("chat_sessions.id", ondelete="CASCADE"),
+    session_id: Mapped[str] = mapped_column(
+        String(36),
+        ForeignKey(
+            "chat_sessions.id",
+            ondelete="CASCADE"
+        ),
         nullable=False,
         index=True
     )
 
     sender: Mapped[str] = mapped_column(
-        String(20), nullable=False
+        String(20),
+        nullable=False
     )
 
-    content: Mapped[str] = mapped_column(Text, nullable=False)
+    content: Mapped[str] = mapped_column(
+        Text,
+        nullable=False
+    )
 
-    metadata_json: Mapped[dict | None] = mapped_column(
+    metadata_json: Mapped[Optional[dict]] = mapped_column(
         "metadata",
-        JSONB
+        JSON,
+        nullable=True
     )
 
     created_at: Mapped[DateTime] = mapped_column(
-        DateTime(timezone=True), server_default=func.now()
+        DateTime,
+        server_default=func.now()
     )
 
     __table_args__ = (
@@ -419,7 +577,8 @@ class ChatMessage(Base):
     )
 
     session = relationship(
-        "ChatSession", back_populates="messages"
+        "ChatSession",
+        back_populates="messages"
     )
 
 
@@ -428,35 +587,49 @@ class ChatMessage(Base):
 # =========================================================
 
 class KnowledgeDocument(Base):
+
     __tablename__ = "knowledge_documents"
 
-    id: Mapped[uuid.UUID] = mapped_column(
-        UUID(as_uuid=True),
+    id: Mapped[str] = mapped_column(
+        String(36),
         primary_key=True,
-        default=uuid.uuid4
+        default=generate_uuid
     )
 
-    owner_customer_id: Mapped[uuid.UUID | None] = mapped_column(
-        UUID(as_uuid=True),
-        ForeignKey("customers.id", ondelete="CASCADE"),
+    owner_customer_id: Mapped[Optional[str]] = mapped_column(
+        String(36),
+        ForeignKey(
+            "customers.id",
+            ondelete="CASCADE"
+        ),
         nullable=True,
         index=True
     )
 
     title: Mapped[str] = mapped_column(
-        String(255), nullable=False
+        String(255),
+        nullable=False
     )
 
-    source: Mapped[str | None] = mapped_column(String(500))
+    source: Mapped[Optional[str]] = mapped_column(
+        String(500),
+        nullable=True
+    )
 
     visibility: Mapped[str] = mapped_column(
-        String(20), default="PUBLIC", nullable=False
+        String(20),
+        default="PUBLIC",
+        nullable=False
     )
 
-    document_type: Mapped[str | None] = mapped_column(String(50))
+    document_type: Mapped[Optional[str]] = mapped_column(
+        String(50),
+        nullable=True
+    )
 
     created_at: Mapped[DateTime] = mapped_column(
-        DateTime(timezone=True), server_default=func.now()
+        DateTime,
+        server_default=func.now()
     )
 
     __table_args__ = (
@@ -473,7 +646,8 @@ class KnowledgeDocument(Base):
     )
 
     owner = relationship(
-        "Customer", back_populates="knowledge_documents"
+        "Customer",
+        back_populates="knowledge_documents"
     )
 
     chunks = relationship(
@@ -488,39 +662,49 @@ class KnowledgeDocument(Base):
 # =========================================================
 
 class DocumentChunk(Base):
+
     __tablename__ = "document_chunks"
 
-    id: Mapped[uuid.UUID] = mapped_column(
-        UUID(as_uuid=True),
+    id: Mapped[str] = mapped_column(
+        String(36),
         primary_key=True,
-        default=uuid.uuid4
+        default=generate_uuid
     )
 
-    document_id: Mapped[uuid.UUID] = mapped_column(
-        UUID(as_uuid=True),
-        ForeignKey("knowledge_documents.id", ondelete="CASCADE"),
+    document_id: Mapped[str] = mapped_column(
+        String(36),
+        ForeignKey(
+            "knowledge_documents.id",
+            ondelete="CASCADE"
+        ),
         nullable=False,
         index=True
     )
 
     chunk_index: Mapped[int] = mapped_column(
-        Integer, nullable=False
+        Integer,
+        nullable=False
     )
 
-    content: Mapped[str] = mapped_column(Text, nullable=False)
+    content: Mapped[str] = mapped_column(
+        Text,
+        nullable=False
+    )
 
-    embedding = mapped_column(
-        Vector(settings.EMBEDDING_DIMENSION),
+    embedding: Mapped[Optional[List[float]]] = mapped_column(
+        JSON,
         nullable=True
     )
 
-    metadata_json: Mapped[dict | None] = mapped_column(
+    metadata_json: Mapped[Optional[dict]] = mapped_column(
         "metadata",
-        JSONB
+        JSON,
+        nullable=True
     )
 
     created_at: Mapped[DateTime] = mapped_column(
-        DateTime(timezone=True), server_default=func.now()
+        DateTime,
+        server_default=func.now()
     )
 
     __table_args__ = (
@@ -529,14 +713,9 @@ class DocumentChunk(Base):
             "chunk_index",
             name="uq_document_chunk_index"
         ),
-        Index(
-            "ix_document_chunks_embedding",
-            "embedding",
-            postgresql_using="hnsw",
-            postgresql_ops={"embedding": "vector_cosine_ops"}
-        ),
     )
 
     document = relationship(
-        "KnowledgeDocument", back_populates="chunks"
+        "KnowledgeDocument",
+        back_populates="chunks"
     )
