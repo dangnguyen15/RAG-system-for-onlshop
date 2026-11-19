@@ -10,6 +10,7 @@ from backend.database.connection import (
 
 from backend.database.models import (
     Customer,
+    UserCredential,
     Category,
     Product,
     Order,
@@ -18,6 +19,7 @@ from backend.database.models import (
     KnowledgeDocument,
 )
 
+from backend.security.authentication import hash_password
 
 # =========================================================
 # SEED DATABASE
@@ -53,6 +55,27 @@ def seed_database():
 
             db.add(customer)
             db.flush()
+
+        
+        # -------------------------------------
+        # CUSTOMER CREDENTIALS
+        # -------------------------------------
+
+        user_credentials = db.scalar(
+            select(UserCredential).where(
+                UserCredential.customer_id == customer.id
+            )
+        )
+
+        if user_credentials is None:
+
+            user_credentials = UserCredential(
+                customer_id=customer.id,
+                password_hash=hash_password("abc@123")
+            )
+
+            db.add(user_credentials)
+
 
         # -------------------------------------
         # 2. CATEGORIES

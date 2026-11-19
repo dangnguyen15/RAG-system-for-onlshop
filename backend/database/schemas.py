@@ -1,4 +1,5 @@
 
+from typing import Optional, List
 from datetime import datetime
 from decimal import Decimal
 
@@ -11,7 +12,7 @@ from pydantic import (
 
 
 # =========================================================
-# CUSTOMER
+# CUSTOMER SCHEMAS
 # =========================================================
 
 class CustomerCreate(BaseModel):
@@ -22,8 +23,13 @@ class CustomerCreate(BaseModel):
     )
 
     email: EmailStr
-    phone: str | None = None
-    address: str | None = None
+
+    phone: Optional[str] = Field(
+        default=None,
+        max_length=20
+    )
+
+    address: Optional[str] = None
 
 
 class CustomerRead(BaseModel):
@@ -31,125 +37,210 @@ class CustomerRead(BaseModel):
     id: str
     full_name: str
     email: EmailStr
-    phone: str | None
-    address: str | None
+    phone: Optional[str] = None
+    address: Optional[str] = None
     is_active: bool
     created_at: datetime
 
-    model_config = ConfigDict(from_attributes=True)
-
-
-# =========================================================
-# CATEGORY
-# =========================================================
-
-class CategoryCreate(BaseModel):
-
-    name: str = Field(
-        min_length=1,
-        max_length=120
+    model_config = ConfigDict(
+        from_attributes=True
     )
 
-    description: str | None = None
-
 
 # =========================================================
-# PRODUCT
+# PRODUCT SCHEMAS
 # =========================================================
 
 class ProductCreate(BaseModel):
 
-    category_id: str | None = None
+    category_id: str
 
-    name: str = Field(
+    product_name: str = Field(
         min_length=1,
         max_length=200
     )
 
-    description: str | None = None
+    description: Optional[str] = None
 
-    price: Decimal = Field(ge=0)
+    price: Decimal = Field(
+        ge=0
+    )
 
-    stock_quantity: int = Field(ge=0)
+    stock_quantity: int = Field(
+        ge=0
+    )
 
 
 class ProductRead(BaseModel):
 
     id: str
-    category_id: str | None
-    name: str
-    description: str | None
+    category_id: str
+    product_name: str
+    description: Optional[str] = None
     price: Decimal
     stock_quantity: int
     is_active: bool
+    created_at: datetime
 
-    model_config = ConfigDict(from_attributes=True)
+    model_config = ConfigDict(
+        from_attributes=True
+    )
 
 
 # =========================================================
-# ORDER
+# ORDER SCHEMAS
 # =========================================================
+
+class OrderItemRead(BaseModel):
+
+    id: str
+    product_id: Optional[str] = None
+    product_name_snapshot: str
+    quantity: int
+    unit_price: Decimal
+
+    model_config = ConfigDict(
+        from_attributes=True
+    )
+
 
 class OrderRead(BaseModel):
 
     id: str
-    customer_id: str
     order_code: str
+    customer_id: str
+    status: str
     total_amount: Decimal
-    order_status: str
-    shipping_address: str
     created_at: datetime
 
-    model_config = ConfigDict(from_attributes=True)
+    model_config = ConfigDict(
+        from_attributes=True
+    )
 
 
 # =========================================================
-# CHAT
-# =========================================================
-
-class ChatMessageCreate(BaseModel):
-
-    content: str = Field(min_length=1)
-
-
-class ChatMessageRead(BaseModel):
-
-    id: str
-    session_id: str
-    sender: str
-    content: str
-    created_at: datetime
-
-    model_config = ConfigDict(from_attributes=True)
-
-
-# =========================================================
-# KNOWLEDGE DOCUMENT
+# KNOWLEDGE DOCUMENT SCHEMAS
 # =========================================================
 
 class KnowledgeDocumentCreate(BaseModel):
 
-    title: str = Field(
-        min_length=1,
-        max_length=255
-    )
+    title: str
 
-    source: str | None = None
+    content: str
 
     visibility: str = "PUBLIC"
 
-    document_type: str | None = None
-
-    owner_customer_id: str | None = None
+    owner_customer_id: Optional[str] = None
 
 
 class KnowledgeDocumentRead(BaseModel):
 
     id: str
     title: str
-    source: str | None
     visibility: str
-    document_type: str | None
+    owner_customer_id: Optional[str] = None
     created_at: datetime
 
-    model_config = ConfigDict(from_attributes=True)
+    model_config = ConfigDict(
+        from_attributes=True
+    )
+
+
+# =========================================================
+# CHAT MESSAGE SCHEMAS
+# =========================================================
+
+class ChatMessageRead(BaseModel):
+
+    id: str
+
+    session_id: str
+
+    sender: str
+
+    content: str
+
+    created_at: datetime
+
+    model_config = ConfigDict(
+        from_attributes=True
+    )
+
+
+# =========================================================
+# AUTHENTICATION SCHEMAS
+# =========================================================
+
+class LoginRequest(BaseModel):
+
+    email: EmailStr
+
+    password: str = Field(
+        min_length=1,
+        max_length=128
+    )
+
+
+class TokenResponse(BaseModel):
+
+    access_token: str
+
+    token_type: str = "bearer"
+
+    expires_in: int
+
+    customer_id: str
+
+
+# =========================================================
+# CHAT SESSION SCHEMAS
+# =========================================================
+
+class ChatSessionCreate(BaseModel):
+
+    session_title: Optional[str] = Field(
+        default=None,
+        max_length=200
+    )
+
+
+class ChatSessionRead(BaseModel):
+
+    id: str
+
+    customer_id: str
+
+    session_title: Optional[str] = None
+
+    is_active: bool
+
+    created_at: datetime
+
+    model_config = ConfigDict(
+        from_attributes=True
+    )
+
+
+# =========================================================
+# CHAT REQUEST SCHEMAS
+# =========================================================
+
+class ChatMessageRequest(BaseModel):
+
+    content: str = Field(
+        min_length=1,
+        max_length=2000
+    )
+
+
+# =========================================================
+# CHAT RESPONSE SCHEMAS
+# =========================================================
+
+class ChatTurnResponse(BaseModel):
+
+    session_id: str
+
+    user_message: ChatMessageRead
+
+    assistant_message: ChatMessageRead

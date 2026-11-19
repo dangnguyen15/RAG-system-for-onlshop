@@ -70,3 +70,20 @@ database/onlshop.db
 - UUID values are stored as strings.
 - Embeddings are stored as JSON arrays.
 - Vector similarity search will be implemented in the RAG module.
+
+rp:
+{
+  "access_token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIyMDI2MDFiYy03NTRkLTQwNWEtOWQ0YS0zM2YxMjczYTU3M2IiLCJlbWFpbCI6ImN1c3RvbWVyLmFAZXhhbXBsZS5jb20iLCJpYXQiOjE3OTUwODgyMTgsImV4cCI6MTc5NTA5MTgxOH0.LJZxLpx3r4ghFVhrIX7ukpI2BgPLCPIsUIDSXBUYG5Q",
+  "token_type": "bearer",
+  "expires_in": 3600,
+  "customer_id": "202601bc-754d-405a-9d4a-33f1273a573b"
+}
+
+rp:
+{
+  "id": "b219e4f3-119a-43e7-b407-324b62abbf9d",
+  "customer_id": "202601bc-754d-405a-9d4a-33f1273a573b",
+  "session_title": "Test conversation",
+  "is_active": true,
+  "created_at": "2026-11-19T11:54:35"
+}

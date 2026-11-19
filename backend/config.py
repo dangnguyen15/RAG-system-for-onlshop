@@ -4,13 +4,9 @@ from pathlib import Path
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
-# Project root
 BASE_DIR = Path(__file__).resolve().parent.parent
 
-# Database directory
 DATABASE_DIR = BASE_DIR / "database"
-
-# SQLite database file
 DATABASE_PATH = DATABASE_DIR / "onlshop.db"
 
 
@@ -21,18 +17,21 @@ class Settings(BaseSettings):
     APP_ENV: str = "development"
     DEBUG: bool = True
 
-    # SQLite
+    # Database
     DATABASE_PATH: str = str(DATABASE_PATH)
 
-    # Qwen LLM
+    # Authentication / JWT
+    JWT_SECRET_KEY: str = "CHANGE_THIS_TO_A_RANDOM_SECRET"
+    JWT_ALGORITHM: str = "HS256"
+    ACCESS_TOKEN_EXPIRE_MINUTES: int = 60
+
+    # Qwen
     QWEN_API_KEY: str = ""
     QWEN_BASE_URL: str = ""
     QWEN_MODEL: str = "Qwen3.8-Flash"
 
     # Embedding
     EMBEDDING_MODEL_NAME: str = "Vietnamese_Embedding_v2"
-
-    # Dimension phải được xác minh từ model thực tế
     EMBEDDING_DIMENSION: int = 768
 
     model_config = SettingsConfigDict(
